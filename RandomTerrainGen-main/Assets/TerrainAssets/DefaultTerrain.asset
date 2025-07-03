@@ -41,3 +41,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   useFlatShading: 0
   useFalloff: 0
+  foiliage:
+  - {fileID: 8238405953849587207, guid: 494e863ab7fb7a0408a8e4b62ceb3f87, type: 3}
+  - {fileID: 112120878448282100, guid: 2e84b8a5766a7814db80ded63f1e1e2c, type: 3}
+  minDistFoiliage: 1000
+  maxDistFoiliage: 1500

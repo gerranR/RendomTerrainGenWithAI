@@ -123,9 +123,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7487cc25fac48fc40a92f6a486eb7b28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  useAStar: 1
   currentNode: {fileID: 0}
   path: []
   enemyNode: {fileID: 0}
   mapGenerator: {fileID: 0}
+  agent: {fileID: 0}
   diffrence: 5
+  radius: 0
   ren: {fileID: 391787382924523503}

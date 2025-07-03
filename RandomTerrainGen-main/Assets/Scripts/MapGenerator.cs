@@ -12,9 +12,11 @@ public class MapGenerator : MonoBehaviour
     public enum DrawMode { NoiseMap, Mesh, FalloffMap };
     public DrawMode drawMode;
 
-    public TerrainData terrainData;
+    public TerrainData[] terrainData;
     public NoiceData noiseData;
-    public TextureData textureData;
+    public TextureData[] textureData;
+
+    public const int dataNum = 0;
 
     public Material terrainMaterial;
 
@@ -28,7 +30,7 @@ public class MapGenerator : MonoBehaviour
     Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
     Queue<MapThreadInfo<MashData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<MashData>>();
 
-    [Space]
+    [Space(20f)]
 
     public Node nodePrefab;
     public List<Node> nodeList;
@@ -44,11 +46,16 @@ public class MapGenerator : MonoBehaviour
     [Tooltip("the higher the node density the fewer nodes")]
     public int nodeDensity = 1;
 
-
+    public bool GenNodes;
 
     private void Awake()
     {
-        textureData.UpdateMeshHeight(terrainMaterial, terrainData.minHeight, terrainData.maxHeight);
+        textureData[dataNum].UpdateMeshHeight(terrainMaterial, terrainData[dataNum].minHeight, terrainData[dataNum].maxHeight);
+
+        if (noiseData.randomSeed)
+        {
+            noiseData.seed = UnityEngine.Random.Range(0, 999999);
+        }
     }
     void OnValuesUpdated()
     {
@@ -60,14 +67,14 @@ public class MapGenerator : MonoBehaviour
 
     void OnTextureValuesUpdated()
     {
-        textureData.applyToMaterial(terrainMaterial);
+        textureData[dataNum].applyToMaterial(terrainMaterial);
     }
 
     public int mapChunkSize
     {
         get
         {
-            if (terrainData.useFlatShading)
+            if (terrainData[dataNum].useFlatShading)
             {
                 return 95;
             }
@@ -80,7 +87,7 @@ public class MapGenerator : MonoBehaviour
 
     public void DrawMapInEditor()
     {
-        textureData.UpdateMeshHeight(terrainMaterial, terrainData.minHeight, terrainData.maxHeight);
+        textureData[dataNum].UpdateMeshHeight(terrainMaterial, terrainData[dataNum].minHeight, terrainData[dataNum].maxHeight);
         MapData mapData = GenerateMapData(Vector2.zero);
 
         MapDisplay display = FindFirstObjectByType<MapDisplay>();
@@ -90,7 +97,7 @@ public class MapGenerator : MonoBehaviour
         }
         else if (drawMode == DrawMode.Mesh)
         {
-            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, terrainData.meshHeightMultiplier, terrainData.meshHeightCurve, editorPreviewLOD, terrainData.useFlatShading));
+            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, terrainData[dataNum].meshHeightMultiplier, terrainData[dataNum].meshHeightCurve, editorPreviewLOD, terrainData[dataNum].useFlatShading));
             //CreateNodes(mapData, Vector3.zero);
         }
         else if (drawMode == DrawMode.FalloffMap)
@@ -120,18 +127,20 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    public void RequestMeshData(MapData mapData, int lod, Action<MashData> callback)
+    public void RequestMeshData(MapData mapData, int lod, Action<MashData> callback, int biome, float hightLeft, float hightDown)
     {
         ThreadStart threadStart = delegate {
-            MeshDataThread(mapData, lod, callback);
+            MeshDataThread(mapData, lod, callback, hightLeft, hightDown, biome);
         };
 
         new Thread(threadStart).Start();
     }
 
-    void MeshDataThread(MapData mapData, int lod, Action<MashData> callback)
+    void MeshDataThread(MapData mapData, int lod, Action<MashData> callback, float hightLeft, float hightDown, int biome = dataNum)
     {
-        MashData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap, terrainData.meshHeightMultiplier, terrainData.meshHeightCurve, lod, terrainData.useFlatShading);
+        MashData meshData;
+
+        meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap, terrainData[biome].meshHeightMultiplier, terrainData[biome].meshHeightCurve, lod, terrainData[biome].useFlatShading, hightLeft,hightDown);
         lock (meshDataThreadInfoQueue)
         {
             meshDataThreadInfoQueue.Enqueue(new MapThreadInfo<MashData>(callback, meshData));
@@ -164,7 +173,7 @@ public class MapGenerator : MonoBehaviour
         float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2, noiseData.seed, noiseData.noiseScale, noiseData.octaves, noiseData.persistance, noiseData.lacunarity, centre + noiseData.offset, noiseData.normalizeMode);
 
 
-        if (terrainData.useFalloff)
+        if (terrainData[dataNum].useFalloff)
         {
 
             if (falloffMap == null)
@@ -176,7 +185,7 @@ public class MapGenerator : MonoBehaviour
             {
                 for (int x = 0; x < mapChunkSize + 2; x++)
                 {
-                    if (terrainData.useFalloff)
+                    if (terrainData[dataNum].useFalloff)
                     {
                         noiseMap[x, y] = Mathf.Clamp01(noiseMap[x, y] - falloffMap[x, y]);
                     }
@@ -194,8 +203,8 @@ public class MapGenerator : MonoBehaviour
 
         if (terrainData != null)
         {
-            terrainData.onValuesUpdated -= OnValuesUpdated;
-            terrainData.onValuesUpdated += OnValuesUpdated;
+            terrainData[dataNum].onValuesUpdated -= OnValuesUpdated;
+            terrainData[dataNum].onValuesUpdated += OnValuesUpdated;
         }
         if (noiseData != null)
         {
@@ -204,8 +213,8 @@ public class MapGenerator : MonoBehaviour
         }
         if (textureData != null)
         {
-            textureData.onValuesUpdated -= OnTextureValuesUpdated;
-            textureData.onValuesUpdated += OnTextureValuesUpdated;
+            textureData[dataNum].onValuesUpdated -= OnTextureValuesUpdated;
+            textureData[dataNum].onValuesUpdated += OnTextureValuesUpdated;
         }
 
     }
@@ -233,12 +242,12 @@ public class MapGenerator : MonoBehaviour
         canDrawGizmos = false;
         nodeParent.transform.rotation = Quaternion.identity;
 
-        print(terrainData.meshHeightCurve.Evaluate(mapData.heightMap[0, 0]) * terrainData.meshHeightMultiplier);
+        print(terrainData[dataNum].meshHeightCurve.Evaluate(mapData.heightMap[0, 0]) * terrainData[dataNum].meshHeightMultiplier);
         for (int x = 0; x < mapChunkSize; x += nodeDensity)
         {
             for (int z = 0; z < mapChunkSize; z += nodeDensity)
             {
-                float height = terrainData.meshHeightCurve.Evaluate(mapData.heightMap[z, x]) * terrainData.meshHeightMultiplier;
+                float height = terrainData[dataNum].meshHeightCurve.Evaluate(mapData.heightMap[z, x]) * terrainData[dataNum].meshHeightMultiplier;
                 float xPos = (x - mapChunkSize / 2) + cornerCords.x;
                 float zPos = (z - mapChunkSize / 2) + cornerCords.y;
                 Vector3 pos = new Vector3(xPos, height + 1, zPos);

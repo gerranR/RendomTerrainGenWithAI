@@ -10,6 +10,9 @@ public class TerrainData : UpdatableData
     public AnimationCurve meshHeightCurve;
     public bool useFlatShading;
     public bool useFalloff;
+    public GameObject[] foiliage;
+    public float minDistFoiliage;
+    public float maxDistFoiliage;
 
     public float minHeight
     {

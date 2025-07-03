@@ -1,10 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.LightTransport;
+using UnityEngine.UIElements;
 
 public static class MeshGenerator
 {
-    public static MashData GenerateTerrainMesh(float[,] heightmap, float heightMultipleir, AnimationCurve _heightCurve, int levelOfDetail, bool useFlatShading)
+    public static MashData GenerateTerrainMesh(float[,] heightmap, float heightMultipleir, AnimationCurve _heightCurve, int levelOfDetail, bool useFlatShading, float OldheightMultipleirX = 0.0f, float OldheightMultipleirZ = 0.0f)
     {
         int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
         AnimationCurve heightCurve = new AnimationCurve(_heightCurve.keys);
@@ -14,6 +17,12 @@ public static class MeshGenerator
         float topLeftX = (meshSizeUnsimplifide - 1) / -2f;
         float topLeftZ = (meshSizeUnsimplifide - 1) / 2f;
 
+        if (OldheightMultipleirX == 0)
+            OldheightMultipleirX = heightMultipleir;
+        if(OldheightMultipleirZ == 0)
+            OldheightMultipleirZ = heightMultipleir;
+
+        Debug.Log($"heightMultipleir: {heightMultipleir}, newheightMultipleirX: {OldheightMultipleirX}, newheightMultipleirZ: {OldheightMultipleirZ}");
 
         int verticesPerLine = (meshSize - 1) / meshSimplificationIncrement + 1;
 
@@ -48,7 +57,31 @@ public static class MeshGenerator
             {
                 int vertexIndex = vertexIndicesMap[x, y];
                 Vector2 percent = new Vector2((x - meshSimplificationIncrement) / (float)meshSize, (y - meshSimplificationIncrement) / (float)meshSize);
-                float height = heightCurve.Evaluate(heightmap[x, y]) * heightMultipleir;    
+
+                float worldX = topLeftX + percent.x * meshSizeUnsimplifide;
+                float worldZ = topLeftZ + percent.y * meshSizeUnsimplifide;
+
+                float blendStartX = topLeftX;
+                float blendEndX = topLeftX + meshSizeUnsimplifide / 2;
+
+                float blendStartZ = topLeftZ;
+                float blendEndZ = topLeftZ + meshSizeUnsimplifide / 2;
+
+                float blendFactorX = Mathf.Clamp01(Mathf.InverseLerp(blendStartX, blendEndX, worldX));
+
+                float biomeBlendX = Mathf.SmoothStep(0, 1, blendFactorX);
+                float lerpBlendX = Mathf.Lerp(heightMultipleir, OldheightMultipleirX, biomeBlendX);
+
+
+                float blendFactorZ = Mathf.Clamp01(Mathf.InverseLerp(blendStartZ, blendEndZ, worldZ));
+                float biomeBlendZ = Mathf.SmoothStep(0, 1, blendFactorZ);
+                float lerpBlendZ = Mathf.Lerp(heightMultipleir, OldheightMultipleirZ, biomeBlendZ);
+
+                float finalBlend = (lerpBlendX + lerpBlendZ) / 2;
+
+                float baseHeight = heightmap[x, y];
+                float height = heightCurve.Evaluate(baseHeight) * finalBlend;
+
                 Vector3 vertexPosition = new Vector3(topLeftX + percent.x * meshSizeUnsimplifide, height, topLeftZ - percent.y * meshSizeUnsimplifide);
 
                 meshData.AddVertex(vertexPosition, percent, vertexIndex);

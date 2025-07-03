@@ -1,7 +1,10 @@
 ﻿using NUnit.Framework.Constraints;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Net.NetworkInformation;
+using System.Threading;
+using Unity.AI.Navigation;
 using UnityEngine;
 public class EndlessTerrain : MonoBehaviour
 {
@@ -22,9 +25,23 @@ public class EndlessTerrain : MonoBehaviour
     int chunkSize;
     int chunksVisibleInViewDst;
 
+    public float newBiomeChanse;
+    private float newBiomechangeChanse;
+    private int curBiome;
+
     Dictionary<Vector2, TerrainChunk> terrainChunkDictionary = new Dictionary<Vector2, TerrainChunk>();
+    Dictionary<TerrainChunk, float> terrainChunkHeightDictionary = new Dictionary<TerrainChunk, float>();
+
     Dictionary<TerrainChunk, bool> terrainChunknodeDictionary = new Dictionary<TerrainChunk, bool>();
     static List<TerrainChunk> terrainChunksVisibleLastUpdate = new List<TerrainChunk>();
+
+    public Shader tarrainShader;
+
+    public GameObject pray;
+    public GameObject preditor;
+    public int preditorChanse;
+    public int minAnimalsPerChunk;
+    public int maxAnimalsPerChunk;
 
     void Start()
     {
@@ -39,7 +56,7 @@ public class EndlessTerrain : MonoBehaviour
 
     void Update()
     {
-        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / mapGenerator.terrainData.uniformScale;
+        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / mapGenerator.terrainData[0].uniformScale;
 
         if ((viewerPositionOld - viewerPosition).sqrMagnitude > sqrViewerMoveThresholdForChunkUpdate)
         {
@@ -72,8 +89,39 @@ public class EndlessTerrain : MonoBehaviour
                 }
                 else
                 {
-                    TerrainChunk chunk = new TerrainChunk(viewedChunkCoord, chunkSize, detailLevels, transform, mapMaterial);
+                    newBiomechangeChanse++;
+                    if (newBiomechangeChanse >= newBiomeChanse)
+                    {
+                        curBiome = Random.Range(0,mapGenerator.terrainData.Length);
+                    }
+                    TerrainChunk terrainChunkLeft;
+                    terrainChunkDictionary.TryGetValue(new Vector2(currentChunkCoordX + xOffset - 1, currentChunkCoordY + yOffset - 1), out terrainChunkLeft);
+                    float hightLeft;
+                    if (terrainChunkLeft != null && terrainChunkHeightDictionary.ContainsKey(terrainChunkLeft))
+                    {
+                        terrainChunkHeightDictionary.TryGetValue(terrainChunkLeft, out hightLeft);
+                    }
+                    else
+                    {
+                        hightLeft = mapGenerator.terrainData[curBiome].meshHeightMultiplier;
+                    }
+
+                    TerrainChunk terrainChunkDown;
+                    terrainChunkDictionary.TryGetValue(new Vector2(currentChunkCoordX + xOffset - 1, currentChunkCoordY + yOffset - 1), out terrainChunkDown);
+                    float hightDown;
+                    if (terrainChunkDown != null && terrainChunkHeightDictionary.ContainsKey(terrainChunkDown))
+                    {
+                        terrainChunkHeightDictionary.TryGetValue(terrainChunkLeft, out hightDown);
+                    }
+                    else
+                    {
+                        hightDown = mapGenerator.terrainData[curBiome].meshHeightMultiplier;
+                    }
+
+                    TerrainChunk chunk = new TerrainChunk(viewedChunkCoord, chunkSize, detailLevels, transform, mapMaterial, curBiome, hightLeft, hightDown, tarrainShader,
+                        pray, preditor, preditorChanse, minAnimalsPerChunk, maxAnimalsPerChunk);
                     terrainChunkDictionary.Add(viewedChunkCoord, chunk);
+                    terrainChunkHeightDictionary.Add(chunk, mapGenerator.terrainData[curBiome].meshHeightMultiplier);
                 }
 
             }
@@ -86,10 +134,12 @@ public class EndlessTerrain : MonoBehaviour
         GameObject meshObject;
         Vector2 position;
         Bounds bounds;
+        int _size;
 
         MeshRenderer meshRenderer;
         MeshFilter meshFilter;
         MeshCollider meshCollider;
+        NavMeshSurface navMeshSurface;
 
         LODInfo[] detailLevels;
         LODMesh[] lodMeshes;
@@ -99,27 +149,60 @@ public class EndlessTerrain : MonoBehaviour
         bool mapDataReceived;
         int previousLODIndex = -1;
         bool hasNodes = false;
+        int biome;
+        float hightLeft;
+        float hightDown;
 
-        public TerrainChunk(Vector2 coord, int size, LODInfo[] detailLevels, Transform parent, Material material)
+        public GameObject pray;
+        public GameObject preditor;
+        public int preditorChanse;
+        public int minAnimalsPerChunk;
+        public int maxAnimalsPerChunk;
+
+        public TerrainChunk(Vector2 coord, int size, LODInfo[] detailLevels,
+            Transform parent, Material material, int Biome, float _hightLeft,
+            float _hightDown, Shader tarrainShader, GameObject _pray, GameObject _preditor,
+            int _preditorChanse, int _minAnimalsPerChunk, int _maxAnimalsPerChunk)
         {
             this.detailLevels = detailLevels;
+
+            pray = _pray; 
+            preditor = _preditor;
+            preditorChanse = _preditorChanse;
+            minAnimalsPerChunk = _minAnimalsPerChunk;
+            maxAnimalsPerChunk= _maxAnimalsPerChunk;
+
 
             position = coord * size;
             bounds = new Bounds(position, Vector2.one * size);
             Vector3 positionV3 = new Vector3(position.x, 0, position.y);
+            biome = Biome;
+            hightLeft = _hightLeft;
+            hightDown = _hightDown;
+            _size = size;
 
             meshObject = new GameObject("Terrain Chunk");
             meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshFilter = meshObject.AddComponent<MeshFilter>();
             meshCollider = meshObject.AddComponent<MeshCollider>();
-            meshRenderer.material = material;
+            navMeshSurface = meshObject.AddComponent<NavMeshSurface>();
+            navMeshSurface.collectObjects = CollectObjects.All;
+            navMeshSurface.BuildNavMesh();
 
-            meshObject.transform.position = positionV3 * mapGenerator.terrainData.uniformScale;
+
+            Material m = new Material(tarrainShader);
+
+            mapGenerator.textureData[biome].applyToMaterial(m);
+
+            meshRenderer.material = m;
+
+            meshObject.transform.position = positionV3 * mapGenerator.terrainData[biome].uniformScale;
             meshObject.transform.parent = parent;
-            meshObject.transform.localScale = Vector3.one * mapGenerator.terrainData.uniformScale;
+            meshObject.transform.localScale = Vector3.one * mapGenerator.terrainData[biome].uniformScale;
             SetVisible(false);
 
-            lodMeshes = new LODMesh[detailLevels.Length];
+
+                lodMeshes = new LODMesh[detailLevels.Length];
             for (int i = 0; i < detailLevels.Length; i++)
             {
                 lodMeshes[i] = new LODMesh(detailLevels[i].lod, UpdateTerrainChunk);
@@ -133,14 +216,26 @@ public class EndlessTerrain : MonoBehaviour
 
         }
 
+        public MapData GetMapData()
+        {  return mapData; }
+
+        public void RebuildNavMesh()
+        {
+            navMeshSurface.BuildNavMesh(); // Call this after changing geometry or areas
+        }
+
         void OnMapDataReceived(MapData mapData)
         {
             this.mapData = mapData;
             mapDataReceived = true;
-            if (!hasNodes)
+            if (!hasNodes && mapGenerator.GenNodes)
             {
                 GenerateNode();
             }
+
+            SpawnFoiliage();
+            SpawnAnimals();
+
             UpdateTerrainChunk();
         }
 
@@ -187,7 +282,7 @@ public class EndlessTerrain : MonoBehaviour
                         }
                         else if (!lodMesh.hasRequestedMesh)
                         {
-                            lodMesh.RequestMesh(mapData);
+                            lodMesh.RequestMesh(mapData, biome, hightLeft, hightDown);
                         }
                     }
 
@@ -199,7 +294,7 @@ public class EndlessTerrain : MonoBehaviour
                         }
                         else if (!collisionLODMesh.hasRequestedMesh)
                         {
-                            collisionLODMesh.RequestMesh(mapData);
+                            collisionLODMesh.RequestMesh(mapData, biome, hightLeft, hightDown);
                         }
                     }
 
@@ -220,7 +315,55 @@ public class EndlessTerrain : MonoBehaviour
             return meshObject.activeSelf;
         }
 
+        private void SpawnFoiliage()
+        {
+            float spawnChanse = 0;
+
+            TerrainData terrainData = mapGenerator.terrainData[biome];
+                    
+            for (int y = -_size / 2; y <= _size / 2; y++)
+            {
+                for (int x = -_size / 2; x <= _size / 2; x++)
+                {
+                    if(Random.Range(0,100) + spawnChanse >= terrainData.maxDistFoiliage)
+                    {
+                        float height = terrainData.meshHeightCurve.Evaluate(mapData.heightMap[x + _size / 2, y + _size / 2]) * terrainData.meshHeightMultiplier;
+                        Instantiate(terrainData.foiliage[Random.Range(0, terrainData.foiliage.Length)], new Vector3(x, height, y) + new Vector3(position.x, 0, position.y), Quaternion.identity, meshObject.transform);
+                        spawnChanse = -terrainData.minDistFoiliage;
+                    }
+                    else
+                    {
+                        spawnChanse++;
+                    }
+                }
+            }
+        }
+
+        private void SpawnAnimals()
+        {
+            int numOfAnimals = Random.Range(minAnimalsPerChunk, maxAnimalsPerChunk);
+                print("spawnTest");
+            for (int i = 0; i < numOfAnimals; i++)
+            {
+                print("spawn");
+                GameObject animal;
+                if (Random.Range(0, 100) >= preditorChanse)
+                {
+                    animal = preditor;
+                }
+                else
+                {
+                    animal = pray;
+                }
+
+                Vector3 spawnPos = new Vector3(Random.Range(position.x, position.x + _size), 20f, Random.Range(position.y, position.y + _size));
+
+                Instantiate(animal, spawnPos, Quaternion.identity);
+            }
+        }
+
     }
+
 
     class LODMesh
     {
@@ -245,10 +388,10 @@ public class EndlessTerrain : MonoBehaviour
             updateCallback();
         }
 
-        public void RequestMesh(MapData mapData)
+        public void RequestMesh(MapData mapData, int biome, float hightLeft, float hightDown)
         {
             hasRequestedMesh = true;
-            mapGenerator.RequestMeshData(mapData, lod, OnMeshDataReceived);
+            mapGenerator.RequestMeshData(mapData, lod, OnMeshDataReceived, biome, hightLeft, hightDown);
         }
 
     }

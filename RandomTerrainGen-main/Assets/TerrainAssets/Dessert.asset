@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1b669e27d71b74d803bd0d4b1b3fc4, type: 3}
+  m_Name: Dessert
+  m_EditorClassIdentifier: 
+  autoUpdate: 1
+  layers:
+  - Texture: {fileID: 2800000, guid: 4d144377b45954843b9f800590afaf5b, type: 3}
+    tint: {r: 0.7075472, g: 0.6149372, b: 0.0360448, a: 0}
+    tintStrenght: 0
+    startHeight: 0
+    blendStrenght: 0.02
+    textureScale: 11
+  - Texture: {fileID: 2800000, guid: 4d144377b45954843b9f800590afaf5b, type: 3}
+    tint: {r: 1, g: 0.86613154, b: 0.0047169924, a: 0}
+    tintStrenght: 0.055
+    startHeight: 0
+    blendStrenght: 0.02
+    textureScale: 11
+  - Texture: {fileID: 2800000, guid: 15ad8e3f32eab684faf6df52011c4f17, type: 3}
+    tint: {r: 0.4528302, g: 0.3922151, b: 0, a: 0}
+    tintStrenght: 0.153
+    startHeight: 0.547
+    blendStrenght: 0.439
+    textureScale: 11

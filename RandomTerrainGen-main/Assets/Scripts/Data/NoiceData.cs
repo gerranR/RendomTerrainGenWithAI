@@ -16,6 +16,7 @@ public class NoiceData : UpdatableData
     public float noiseScale;
 
     public int seed;
+    public bool randomSeed;
     public Vector2 offset;
 
 
