@@ -16,4 +16,4 @@ MonoBehaviour:
   isArmor: 0
   armor: 0
   isWeapon: 1
-  weaponDamage: 20
+  weaponDamage: 5

@@ -1588,18 +1588,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2565716945719674743, guid: 33ff4f1545c7cf943a7b8ab25c377383, type: 3}
-      propertyPath: maxDistFromPlayer
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565716945719674743, guid: 33ff4f1545c7cf943a7b8ab25c377383, type: 3}
-      propertyPath: minDistFromPlayer
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565716945719674743, guid: 33ff4f1545c7cf943a7b8ab25c377383, type: 3}
-      propertyPath: timeBetweenSpawns
-      value: 30
-      objectReference: {fileID: 0}
     - target: {fileID: 4817509063682369171, guid: 33ff4f1545c7cf943a7b8ab25c377383, type: 3}
       propertyPath: armorText
       value: 

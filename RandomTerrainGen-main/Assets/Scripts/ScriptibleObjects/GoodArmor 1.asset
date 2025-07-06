@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Good armor
   isArmor: 1
-  armor: 2
+  armor: 9
   isWeapon: 0
   weaponDamage: 0

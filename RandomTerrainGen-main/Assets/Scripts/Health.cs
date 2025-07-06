@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Health : MonoBehaviour
 {
@@ -7,12 +8,20 @@ public class Health : MonoBehaviour
     public bool isPlayer;
     private Inventory inventory;
 
+    [SerializeField] Slider healthBar;
+
     private void Start()
     {
         if (isPlayer)
         {
             inventory = GetComponent<Inventory>();
         } 
+
+        if(healthBar != null)
+        {
+            healthBar.maxValue = health;
+            healthBar.value = health;
+        }
     }
 
     public void takeDamage(int damage)
@@ -27,6 +36,10 @@ public class Health : MonoBehaviour
         }
         health -= damage;
 
+        if (healthBar != null)
+        {
+            healthBar.value = health;
+        }
         if(health <= 0)
         {
             if (!isPlayer)
