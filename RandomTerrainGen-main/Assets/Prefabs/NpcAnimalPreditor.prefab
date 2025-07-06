@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1363339511981414528}
   - component: {fileID: 6727504632171466011}
   - component: {fileID: 9166388924003562839}
+  - component: {fileID: 3624500862907377691}
   m_Layer: 0
   m_Name: NpcAnimalPreditor
   m_TagString: Animal
@@ -136,6 +137,10 @@ MonoBehaviour:
   radius: 400
   foodcounter: 0
   preditor: 1
+  Monster: 0
+  attackRange: 0
+  attackSpeed: 0
+  damage: 0
   ren: {fileID: 7056375884383550159}
 --- !u!195 &6727504632171466011
 NavMeshAgent:
@@ -156,7 +161,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 2
-  m_BaseOffset: 1
+  m_BaseOffset: 0.5
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!54 &9166388924003562839
@@ -186,3 +191,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 80
   m_CollisionDetection: 0
+--- !u!114 &3624500862907377691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7379747380914416943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e55064299b1654645804ac3e8aa02312, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 10
+  drops:
+  - {fileID: 11400000, guid: 0a0182d0559b0cd49b4ee40d0bd87353, type: 2}
+  isPlayer: 0

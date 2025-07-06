@@ -35,9 +35,18 @@ public class NPC : MonoBehaviour
     public bool preditor;
     private GameObject pray;
 
+    [Header("MonsterStats")]
+    public bool Monster;
+    public float attackRange;
+    public float attackSpeed;
+    private float attackTimer;
+    public int damage;
+
     private void Awake()
     {
         state = State.Wander;
+
+        attackTimer = attackSpeed;
     }
 
     public Renderer ren;
@@ -45,6 +54,11 @@ public class NPC : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(attackTimer < attackSpeed)
+        {
+            attackTimer += Time.deltaTime;
+        }
+
         StateCheck();
 
         if(transform.position.y <= -5f)
@@ -79,24 +93,32 @@ public class NPC : MonoBehaviour
                 }
                 else
                 {
-                    bool reachedGoal = false;
-                    if (agent.isOnNavMesh)
+                    if (Monster)
                     {
-                        if (agent.remainingDistance < 0.5f)
-                        {
-                            reachedGoal = true;
-                        }
-                    }
-                    if(!agent.hasPath || ( reachedGoal && !searched))
-                    {
-                        GetPath();
-                        searched = true;
-                    }
-                    else if(reachedGoal && searched)
-                    {
-                        searched = false; 
-                        FoodCounter();
                         state = State.FindFood;
+                        FindFood();
+                    }
+                    else
+                    {
+                        bool reachedGoal = false;
+                        if (agent.isOnNavMesh)
+                        {
+                            if (agent.remainingDistance < 0.5f)
+                            {
+                                reachedGoal = true;
+                            }
+                        }
+                        if (!agent.hasPath || (reachedGoal && !searched))
+                        {
+                            GetPath();
+                            searched = true;
+                        }
+                        else if (reachedGoal && searched)
+                        {
+                            searched = false;
+                            FoodCounter();
+                            state = State.FindFood;
+                        }
                     }
                 }
                 break;
@@ -137,6 +159,25 @@ public class NPC : MonoBehaviour
                             if(agent.remainingDistance < 0.2f)
                             {
                                 agent.SetDestination(pray.transform.position);
+                            }
+                        }
+                    }
+                    else if(Monster)
+                    {
+                        if (pray != null && agent.isOnNavMesh)
+                        {
+                            if (agent.remainingDistance < radius / 2)
+                            {
+                                if (Vector3.Distance(transform.position, pray.transform.position) <= attackRange)
+                                {
+                                    agent.SetDestination(transform.position);
+                                    Attack();
+                                    //attack
+                                }
+                                else
+                                {
+                                    agent.SetDestination(pray.transform.position);
+                                }
                             }
                         }
                     }
@@ -199,7 +240,6 @@ public class NPC : MonoBehaviour
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, radius);
 
         GameObject closestObj = null;
-
         foreach (Collider col in hitColliders)
         {
             if (preditor)
@@ -211,6 +251,13 @@ public class NPC : MonoBehaviour
                     {
                         closestObj = col.gameObject;
                     }
+                }
+            }
+            else if(Monster)
+            {
+                if (col.transform.tag == "Player")
+                {
+                    closestObj = col.gameObject;
                 }
             }
             else
@@ -227,11 +274,11 @@ public class NPC : MonoBehaviour
         }
         if (closestObj != null)
         {
-            if(preditor)
+            if(preditor || Monster)
             {
                 pray = closestObj;
             }
-            else
+            else if(agent.isOnNavMesh)
             {
                 NavMeshHit hit;
                 NavMesh.SamplePosition(closestObj.transform.position, out hit, 20f, NavMesh.AllAreas);
@@ -239,7 +286,7 @@ public class NPC : MonoBehaviour
                 agent.SetDestination(hit.position);
             }
         }
-        else
+        else if(!Monster)
         {
             state = State.Wander;
             GetPath();
@@ -322,6 +369,20 @@ public class NPC : MonoBehaviour
         {
             print("starved");
             Destroy(gameObject);
+        }
+    }
+
+    public void Attack()
+    {
+        if (attackTimer >= attackSpeed)
+        {
+            Health health = pray.GetComponent<Health>();
+
+            if (health != null)
+            {
+                health.takeDamage(damage);
+                attackTimer = 0;
+            }
         }
     }
 }

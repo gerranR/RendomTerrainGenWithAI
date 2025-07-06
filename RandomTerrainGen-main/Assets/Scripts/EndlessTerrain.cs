@@ -342,10 +342,8 @@ public class EndlessTerrain : MonoBehaviour
         private void SpawnAnimals()
         {
             int numOfAnimals = Random.Range(minAnimalsPerChunk, maxAnimalsPerChunk);
-                print("spawnTest");
             for (int i = 0; i < numOfAnimals; i++)
             {
-                print("spawn");
                 GameObject animal;
                 if (Random.Range(0, 100) >= preditorChanse)
                 {

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1879019123720509289}
   - component: {fileID: 551095269653115077}
   - component: {fileID: 8076322539126794218}
+  - component: {fileID: 1666802739429173216}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Food
@@ -71,6 +72,21 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &1666802739429173216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8238405953849587207}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d28c5fe86f021f5478ade711e433a94c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  drops:
+  - {fileID: 11400000, guid: 375f536d29515de49ade6d9b1517f2c9, type: 2}
+  - {fileID: 11400000, guid: e26b6699c8bab0d4ab29007e1dd0c4f8, type: 2}
 --- !u!1001 &6143006683306812432
 PrefabInstance:
   m_ObjectHideFlags: 0
